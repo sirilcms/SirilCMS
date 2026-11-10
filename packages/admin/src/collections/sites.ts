@@ -87,6 +87,18 @@ export const makeSites = (): CollectionConfig => ({
         { name: 'smtpPort', type: 'number', label: { ru: 'SMTP порт', en: 'SMTP port' }, access: { read: ({ req: { user } }) => isOwner(user) } },
         { name: 'smtpUser', type: 'text', label: { ru: 'SMTP пользователь', en: 'SMTP user' }, access: { read: ({ req: { user } }) => isOwner(user) } },
         {
+          name: 'smtpFrom',
+          type: 'text',
+          label: { ru: 'SMTP отправитель (От кого)', en: 'SMTP sender (From)' },
+          admin: {
+            description: {
+              ru: 'Адрес отправителя писем-уведомлений: noreply@domain.ru или Имя <noreply@domain.ru>. Должен быть разрешён у SMTP-провайдера. Если пусто — используется «SMTP пользователь» (он должен быть email).',
+              en: 'Sender address of notification emails: noreply@domain.com or Name <noreply@domain.com>. Must be allowed by the SMTP provider. If empty, "SMTP user" is used (it must be an email).',
+            },
+          },
+          access: { read: ({ req: { user } }) => isOwner(user) },
+        },
+        {
           name: 'smtpPass',
           type: 'text',
           label: { ru: 'SMTP пароль', en: 'SMTP password' },

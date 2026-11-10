@@ -16,6 +16,7 @@ export type SiteShape = {
     smtpHost?: string | null
     smtpPort?: string | number | null
     smtpUser?: string | null
+    smtpFrom?: string | null
     smtpPass?: string | null
   } | null
 }

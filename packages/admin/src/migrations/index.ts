@@ -13,6 +13,7 @@ import * as migration_20260927_073049_contact_hours_field from './20260927_07304
 import * as migration_20260927_083223_lexical_richtext_html from './20260927_083223_lexical_richtext_html';
 import * as migration_20261013_180050_media_image_sizes from './20261013_180050_media_image_sizes';
 import * as migration_20261013_182430_scheduled_publish from './20261013_182430_scheduled_publish';
+import * as migration_20261110_015245_smtp_from_field from './20261110_015245_smtp_from_field';
 
 export const migrations = [
   {
@@ -88,6 +89,11 @@ export const migrations = [
   {
     up: migration_20261013_182430_scheduled_publish.up,
     down: migration_20261013_182430_scheduled_publish.down,
-    name: '20261013_182430_scheduled_publish'
+    name: '20261013_182430_scheduled_publish',
+  },
+  {
+    up: migration_20261110_015245_smtp_from_field.up,
+    down: migration_20261110_015245_smtp_from_field.down,
+    name: '20261110_015245_smtp_from_field'
   },
 ];
