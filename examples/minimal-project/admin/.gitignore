@@ -44,4 +44,5 @@ next-env.d.ts
 # В примере в репо движка храним только проектную серию + index.
 /src/migrations/*
 !/src/migrations/*_cases.*
+!/src/migrations/*_project_snapshot.*
 !/src/migrations/index.ts
