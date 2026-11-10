@@ -6,6 +6,8 @@
 
 ## [Unreleased]
 
+## [0.8.0] — 2026-11-10
+
 ### ⚠ Breaking / ручные шаги
 - **Применить миграцию** `20261110_015245_smtp_from_field` (новая колонка `sites.settings_smtp_from`): `pnpm --filter <admin-проект> migrate` (в клиентских проектах — `pnpm migrate` после обновления `@sirilcms/admin`). Колонка nullable, данные не меняются. Обратная совместимость: при пустом «SMTP отправитель» отправитель по-прежнему берётся из «SMTP пользователь» — но теперь он обязан быть email, иначе заявка получит статус `failed` в `notifications` вместо попытки отправки. SMTP-провайдеры, где логин — не email (Yandex Cloud Postbox: `ajes7…`), требуют заполнить новое поле.
 - Клиентские проекты (`create-siril`) со своим prod-compose/хостингом: в окружение web-контейнера добавить `NUXT_PURGE_TOKEN=<тот же PURGE_TOKEN, что у admin>` (и `NUXT_PAYLOAD_URL`, если админка не на запечённом при сборке адресе). Проверка — `docs/runbooks/prod.md` §2.3. Стек движка (`infra/docker-compose.prod.yml`) ручных шагов не требует: обновите файл и `make -C infra up`.
