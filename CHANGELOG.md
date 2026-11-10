@@ -6,10 +6,17 @@
 
 ## [Unreleased]
 
+## [0.8.0] — 2026-11-10
+
 ### ⚠ Breaking / ручные шаги
+- **Применить миграцию** `20261110_015245_smtp_from_field` (новая колонка `sites.settings_smtp_from`): `pnpm --filter <admin-проект> migrate` (в клиентских проектах — `pnpm migrate` после обновления `@sirilcms/admin`). Колонка nullable, данные не меняются. Обратная совместимость: при пустом «SMTP отправитель» отправитель по-прежнему берётся из «SMTP пользователь» — но теперь он обязан быть email, иначе заявка получит статус `failed` в `notifications` вместо попытки отправки. SMTP-провайдеры, где логин — не email (Yandex Cloud Postbox: `ajes7…`), требуют заполнить новое поле.
 - Клиентские проекты (`create-siril`) со своим prod-compose/хостингом: в окружение web-контейнера добавить `NUXT_PURGE_TOKEN=<тот же PURGE_TOKEN, что у admin>` (и `NUXT_PAYLOAD_URL`, если админка не на запечённом при сборке адресе). Проверка — `docs/runbooks/prod.md` §2.3. Стек движка (`infra/docker-compose.prod.yml`) ручных шагов не требует: обновите файл и `make -C infra up`.
 
+### Added
+- `@sirilcms/admin`: поле «SMTP отправитель (От кого)» (`sites.settings.smtpFrom`) в Sites → Настройки — адрес `noreply@domain.ru` или `Имя <noreply@domain.ru>`, должен быть разрешён у SMTP-провайдера. Читает только owner (как остальные smtp-поля).
+
 ### Fixed
+- `@sirilcms/admin`: SMTP-уведомления о заявках падали с `550 5.0.0 Empty envelope senders not allowed` (Yandex Cloud Postbox и др.), если «SMTP пользователь» не email или пуст — отправитель брался только из него. Теперь `from = smtpFrom || smtpUser`; если результат пуст или не похож на email, письмо не отправляется, а в `notifications` пишется `failed` с понятной ошибкой («не задан адрес отправителя (SMTP отправитель)»). Для порта 465 включён `secure: true` (implicit TLS).
 - Prod: публикация не сбрасывала HTML-кэш сайта — purge из admin получал 401, обновления появлялись только через 5 мин TTL. Собранный web (`.output`) на рантайме перекрывает `runtimeConfig` только из `NUXT_`-переменных, а prod-compose передавал ему голый `PURGE_TOKEN`, так что web оставался с build-time `dev-purge-token` (и принимал его от кого угодно). `infra/docker-compose.prod.yml` теперь задаёт web `NUXT_PURGE_TOKEN: ${PURGE_TOKEN}` и `NUXT_PAYLOAD_URL: http://admin:3001`; задокументировано в `.env.example`, `docs/runbooks/prod.md` §2.3 и в шаблоне проекта (`.env.example`, `docker/web.Dockerfile`, README). Регрессия ловится `scripts/check-prod-compose-env.mjs` (в `pnpm lint`) и runtime-smoke собранного web в CI (`scripts/check-web-runtime-env.mjs`).
 
 ## [0.7.3] — 2026-10-15

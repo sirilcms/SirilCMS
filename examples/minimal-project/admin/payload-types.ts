@@ -166,6 +166,7 @@ export interface Site {
     smtpHost?: string | null;
     smtpPort?: number | null;
     smtpUser?: string | null;
+    smtpFrom?: string | null;
     smtpPass?: string | null;
     /**
      * ID счётчика Яндекс.Метрики (число). Публично читаемо — подставляется в <head> сайта.
@@ -950,6 +951,7 @@ export interface SitesSelect<T extends boolean = true> {
         smtpHost?: T;
         smtpPort?: T;
         smtpUser?: T;
+        smtpFrom?: T;
         smtpPass?: T;
         analyticsId?: T;
       };

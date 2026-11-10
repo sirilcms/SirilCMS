@@ -38,6 +38,29 @@ export function resolveNotifyRecipients(
   return result
 }
 
+const EMAIL_RE = /^[^\s@<>"]+@[^\s@<>"]+\.[^\s@<>"]+$/
+
+/** Берёт адрес из `noreply@x.ru` или `Имя <noreply@x.ru>`; null, если это не email. */
+function extractEmail(value: string): string | null {
+  const angle = value.match(/<([^<>]+)>\s*$/)
+  const addr = (angle ? angle[1] : value).trim()
+  return EMAIL_RE.test(addr) ? addr : null
+}
+
+/**
+ * Отправитель SMTP-писем: «SMTP отправитель» (smtpFrom) приоритетнее «SMTP пользователь» (smtpUser).
+ * Если результат пуст или не похож на email — `{ error }` (письмо слать нельзя: SMTP-провайдеры
+ * вроде Yandex Cloud Postbox отвечают `550 Empty envelope senders not allowed`).
+ */
+export function resolveSmtpFrom(
+  settings: { smtpFrom?: string | null; smtpUser?: string | null } | null | undefined,
+): { from: string } | { error: string } {
+  const from = settings?.smtpFrom?.trim() || settings?.smtpUser?.trim() || ''
+  if (!from) return { error: 'не задан адрес отправителя (SMTP отправитель)' }
+  if (!extractEmail(from)) return { error: `адрес отправителя «${from}» не похож на email — укажите его в поле «SMTP отправитель»` }
+  return { from }
+}
+
 export type NotificationResult = {
   channel: 'email' | 'telegram'
   recipient: string
@@ -59,18 +82,25 @@ export async function notifySubmission(payload: BasePayload, doc: FormSubmission
   const recipients = resolveNotifyRecipients(site.contacts?.email, (form.notifyEmails ?? []).map((r) => r.email))
 
   if (site.settings?.smtpHost && recipients.length > 0) {
-    const { default: nodemailer } = await import('nodemailer')
-    const smtp = nodemailer.createTransport({
-      host: site.settings.smtpHost,
-      port: Number(site.settings.smtpPort) || 587,
-      auth: site.settings.smtpUser ? { user: site.settings.smtpUser, pass: site.settings.smtpPass ?? undefined } : undefined,
-    })
-    for (const recipient of recipients) {
-      try {
-        await smtp.sendMail({ from: site.settings.smtpUser ?? undefined, to: recipient, subject: `Заявка: ${form.name}`, text, html })
-        results.push({ channel: 'email', recipient, status: 'sent' })
-      } catch (err) {
-        results.push({ channel: 'email', recipient, status: 'failed', error: err instanceof Error ? err.message : String(err) })
+    const sender = resolveSmtpFrom(site.settings)
+    if ('error' in sender) {
+      for (const recipient of recipients) results.push({ channel: 'email', recipient, status: 'failed', error: sender.error })
+    } else {
+      const { default: nodemailer } = await import('nodemailer')
+      const port = Number(site.settings.smtpPort) || 587
+      const smtp = nodemailer.createTransport({
+        host: site.settings.smtpHost,
+        port,
+        secure: port === 465,
+        auth: site.settings.smtpUser ? { user: site.settings.smtpUser, pass: site.settings.smtpPass ?? undefined } : undefined,
+      })
+      for (const recipient of recipients) {
+        try {
+          await smtp.sendMail({ from: sender.from, to: recipient, subject: `Заявка: ${form.name}`, text, html })
+          results.push({ channel: 'email', recipient, status: 'sent' })
+        } catch (err) {
+          results.push({ channel: 'email', recipient, status: 'failed', error: err instanceof Error ? err.message : String(err) })
+        }
       }
     }
   }
